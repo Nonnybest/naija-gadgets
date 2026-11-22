@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { supabase } from '@/lib/supabase';
+import { INITIAL_PRODUCTS } from '@/lib/products-data';
 
 const CATEGORIES = [
   'All',
@@ -40,12 +41,17 @@ export default function Shop() {
       .order('created_at', { ascending: false })
       .limit(600)
       .then(({ data, error }) => {
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           setAllProducts(data);
+        } else {
+          setAllProducts(INITIAL_PRODUCTS);
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setAllProducts(INITIAL_PRODUCTS);
+        setLoading(false);
+      });
   }, []);
 
   // Filtered & Sorted Products

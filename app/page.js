@@ -2,6 +2,7 @@ import Link from 'next/link';
 import LiveMotionHero from '@/components/LiveMotionHero';
 import ProductCard from '@/components/ProductCard';
 import { supabase } from '@/lib/supabase';
+import { INITIAL_PRODUCTS } from '@/lib/products-data';
 
 export const revalidate = 60;
 
@@ -25,9 +26,13 @@ export default async function Home() {
       .select('*')
       .eq('featured', true)
       .limit(8);
-    if (data) featuredProducts = data;
+    if (data && data.length > 0) {
+      featuredProducts = data;
+    } else {
+      featuredProducts = INITIAL_PRODUCTS.filter((p) => p.featured);
+    }
   } catch (err) {
-    console.error('Failed to load featured products:', err);
+    featuredProducts = INITIAL_PRODUCTS.filter((p) => p.featured);
   }
 
   return (

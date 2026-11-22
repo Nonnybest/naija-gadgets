@@ -54,8 +54,10 @@ export default function ProductCard({ p }) {
           onClick={() => setImageOpen(true)}
           aria-label={`View image of ${p.name} larger`}
         >
-          {hasArtwork ? <ProductArtwork product={p} /> : p.image_url ? (
+          {p.image_url ? (
             <img src={p.image_url} alt={p.name || 'Smart gadget'} loading="lazy" decoding="async" className="product-img" />
+          ) : hasArtwork ? (
+            <ProductArtwork product={p} />
           ) : (
             <div className="ph"><span>📶 {p.category || 'Smart Tech'}</span></div>
           )}
@@ -123,8 +125,10 @@ export default function ProductCard({ p }) {
         <div className="image-viewer" role="dialog" aria-modal="true" aria-label={`Product image: ${p.name}`} onClick={(event) => event.stopPropagation()}>
           <button className="image-viewer-close" type="button" onClick={() => setImageOpen(false)} aria-label="Close image viewer">×</button>
           <div className="image-viewer-photo">
-            {hasArtwork ? <ProductArtwork product={p} /> : p.image_url ? (
+            {p.image_url ? (
               <img src={p.image_url} alt={p.name || 'Smart gadget'} loading="eager" decoding="async" />
+            ) : hasArtwork ? (
+              <ProductArtwork product={p} />
             ) : <div className="ph"><span>📶 {p.category || 'Smart Tech'}</span></div>}
           </div>
           <div className="image-viewer-caption"><span>PRODUCT IMAGE</span><h2>{p.name}</h2><p>Click outside the image or press Esc to close.</p></div>
