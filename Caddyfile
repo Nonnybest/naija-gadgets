@@ -1,0 +1,20 @@
+chrismondlaundry.duckdns.org, chrismond.duckdns.org {
+    @api path /rest/v1/* /auth/v1/* /storage/v1/* /realtime/v1/* /functions/v1/* /graphql/v1/*
+    handle @api {
+        reverse_proxy 127.0.0.1:8000
+    }
+    handle_path /ollama/* {
+        @noauth not header Authorization "Bearer 3b815e2c6f4d09a7"
+        respond @noauth 401
+        reverse_proxy 127.0.0.1:11434 {
+            header_up Host 127.0.0.1:11434
+        }
+    }
+    handle {
+        reverse_proxy 127.0.0.1:3001
+    }
+}
+
+lifabfoods.duckdns.org {
+    reverse_proxy 127.0.0.1:8010
+}

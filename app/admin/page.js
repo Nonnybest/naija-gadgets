@@ -101,9 +101,14 @@ export default function Admin() {
 
   return (
     <main className="wrap">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <h2>Stock Management</h2>
-        <button className="chip" onClick={logout}>Sign out ({user.email})</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <a href="/admin/agents" className="btn" style={{ padding: '8px 16px', fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
+            🤖 AI Staff Desk
+          </a>
+          <button className="chip" onClick={logout}>Sign out ({user.email})</button>
+        </div>
       </div>
       {err && <p className="note">{err}</p>}
       <div className="form">

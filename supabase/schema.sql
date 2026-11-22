@@ -12,6 +12,7 @@ create table if not exists ng_products(
 
 create table if not exists ng_orders(
   id uuid primary key default gen_random_uuid(),
+  user_id uuid,
   reference text unique not null, name text, email text, phone text,
   address text, zone text, shipping integer, total integer,
   items jsonb, status text default 'paid', created_at timestamptz default now()
@@ -34,10 +35,5 @@ create policy "admin read orders" on ng_orders for select using (auth.jwt()->>'e
 drop policy if exists "admin update orders" on ng_orders;
 create policy "admin update orders" on ng_orders for update using (auth.jwt()->>'email'='ajalijohn102@gmail.com');
 
-insert into ng_products(name,category,price,stock,description,featured) values
-('65W GaN Fast Charger','Phone accessories',9500,40,'Charges phone and laptop. Travels light.',true),
-('Braided USB-C Cable 2m','Phone accessories',2500,120,'Built to survive bags and pockets.',true),
-('Smart Watch Band Kit','Smart devices',6000,30,'Silicone bands, fits most watches.',false),
-('1080p Smart Cam','Smart devices',18500,15,'Wi-Fi cam with phone alerts.',true),
-('Laptop Stand Aluminium','Laptop accessories',12000,25,'Folds flat, raises your screen.',false),
-('Smart Home Hub Box','Smart home',35000,10,'Your own Jarvis. Control lights, plugs and sensors.',true);
+drop policy if exists users_read_own_orders on ng_orders;
+create policy users_read_own_orders on ng_orders for select using (auth.uid() = user_id);

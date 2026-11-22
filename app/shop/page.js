@@ -1,57 +1,213 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { supabase } from '@/lib/supabase';
 
-const CATS = ['All', 'Phone accessories', 'Laptop accessories', 'Smart devices', 'Smart home'];
+const CATEGORIES = [
+  'All',
+  'Single-Board Computers & Edge AI',
+  'Smart Locks & Biometric Security',
+  'IoT Hubs & Wireless Mesh',
+  'Autonomous Drones & Aerial Robotics',
+  'Hardware Security & Cyber Tools',
+  'Wearable Tech & Smart Rings',
+  'Smart Surveillance & Solar Security',
+  'Robotics & Sensors',
+];
+
+const ITEMS_PER_PAGE = 36;
 
 export default function Shop() {
-  const [all, setAll] = useState([]);
-  const [cat, setCat] = useState('All');
-  const [q, setQ] = useState('');
+  const [allProducts, setAllProducts] = useState([]);
+  const [selectedCat, setSelectedCat] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase
       .from('ng_products')
       .select('*')
+      .order('featured', { ascending: false })
       .order('created_at', { ascending: false })
+      .limit(600)
       .then(({ data, error }) => {
-        if (!error && data) setAll(data);
+        if (!error && data) {
+          setAllProducts(data);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
 
-  const list = all.filter(
-    (p) =>
-      (cat === 'All' || p.category === cat) &&
-      (p.name || '').toLowerCase().includes(q.toLowerCase())
+  // Filtered & Sorted Products
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    let res = allProducts.filter((p) => {
+      const matchCat = selectedCat === 'All' || p.category === selectedCat;
+      const matchQuery =
+        !q ||
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q);
+      return matchCat && matchQuery;
+    });
+
+    if (sortBy === 'price-low') {
+      res.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      res.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'stock') {
+      res.sort((a, b) => b.stock - a.stock);
+    } else if (sortBy === 'featured') {
+      res.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    }
+
+    return res;
+  }, [allProducts, selectedCat, searchQuery, sortBy]);
+
+  const displayedProducts = useMemo(
+    () => filteredProducts.slice(0, visibleCount),
+    [filteredProducts, visibleCount]
   );
 
   return (
-    <main className="wrap">
-      <h2>Shop</h2>
-      <input className="in" placeholder="Search accessories" value={q} onChange={(e) => setQ(e.target.value)} />
-      <div className="chips">
-        {CATS.map((c) => (
-          <button key={c} className={c === cat ? 'chip on' : 'chip'} onClick={() => setCat(c)}>
-            {c}
-          </button>
-        ))}
-      </div>
-      {loading ? (
-        <p className="muted">Loading products...</p>
-      ) : (
-        <>
-          <div className="grid">
-            {list.map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
+    <main className="shop-wrap">
+      {/* Shop Header Banner */}
+      <section className="shop-hero-banner">
+        <div className="wrap">
+          <div className="badge-tag">2026 SMART TECH MARKETPLACE</div>
+          <h1>Explore 500+ Connected Smart Gadgets</h1>
+          <p className="muted" style={{ color: '#B9C6D3', maxWidth: 640 }}>
+            Strictly advanced 2026 hardware with Bluetooth LE, Wi-Fi 7, Matter, Sub-GHz, edge AI,
+            and solar automation. Delivered nationwide across Nigeria.
+          </p>
+        </div>
+      </section>
+
+      <div className="wrap" style={{ marginTop: 24 }}>
+        {/* Controls Bar: Search & Sort */}
+        <div className="shop-controls-bar">
+          <div className="shop-search-box">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="shop-search-input"
+              placeholder="Search Raspberry Pi 5, Smart Lock, Flipper, Drones, IoT Hub..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setVisibleCount(ITEMS_PER_PAGE);
+              }}
+            />
+            {searchQuery && (
+              <button
+                className="clear-search-btn"
+                onClick={() => setSearchQuery('')}
+              >
+                ✕
+              </button>
+            )}
           </div>
-          {!list.length && <p className="muted">Nothing here yet. Try another category.</p>}
-        </>
-      )}
+
+          <div className="shop-sort-box">
+            <label className="sort-label">Sort by:</label>
+            <select
+              className="shop-sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="featured">✨ Flagship & Featured</option>
+              <option value="price-low">💵 Price: Low to High</option>
+              <option value="price-high">💎 Price: High to Low</option>
+              <option value="stock">📦 Highest Stock</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Categories Chips Strip */}
+        <div className="shop-categories-scroll">
+          {CATEGORIES.map((cat) => {
+            const count =
+              cat === 'All'
+                ? allProducts.length
+                : allProducts.filter((p) => p.category === cat).length;
+            const active = selectedCat === cat;
+            return (
+              <button
+                key={cat}
+                className={`category-pill ${active ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedCat(cat);
+                  setVisibleCount(ITEMS_PER_PAGE);
+                }}
+              >
+                <span>{cat}</span>
+                <span className="pill-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Results Counter */}
+        <div className="shop-results-info">
+          <span>
+            Showing <strong>{displayedProducts.length}</strong> of{' '}
+            <strong>{filteredProducts.length}</strong> products
+            {selectedCat !== 'All' ? ` in "${selectedCat}"` : ''}
+          </span>
+          {searchQuery && (
+            <span className="search-tag-active">Keyword: "{searchQuery}"</span>
+          )}
+        </div>
+
+        {/* Products Grid */}
+        {loading ? (
+          <div className="shop-loading-state">
+            <div className="spinner" />
+            <p>Loading 2026 smart gadgets catalog from Oracle VPS database...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="shop-empty-state">
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+            <h3>No gadgets match your filters</h3>
+            <p className="muted">
+              Try a different keyword or reset category to "All" to browse all 500 gadgets.
+            </p>
+            <button
+              className="btn"
+              onClick={() => {
+                setSelectedCat('All');
+                setSearchQuery('');
+              }}
+              style={{ marginTop: 12 }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="jumia-grid">
+              {displayedProducts.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {visibleCount < filteredProducts.length && (
+              <div className="load-more-container">
+                <button
+                  className="btn btn-load-more"
+                  onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
+                >
+                  ⚡ Load Next {Math.min(ITEMS_PER_PAGE, filteredProducts.length - visibleCount)} Products ({filteredProducts.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </main>
   );
 }

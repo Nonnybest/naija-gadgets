@@ -66,6 +66,7 @@ export async function POST(req) {
       .from('ng_orders')
       .insert({
         reference,
+        user_id: customer.user_id || null,
         name: customer.name || '',
         email: customer.email || '',
         phone: customer.phone || '',
