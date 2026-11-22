@@ -5,17 +5,28 @@ import { useAuth } from '@/lib/auth';
 import { supabase, naira } from '@/lib/supabase';
 
 export default function AccountPage() {
-  const { user, loading, signIn, signUp, signOut } = useAuth();
+  const { user, loading, signIn, signUp, signOut, signInWithGoogle, resetPassword, updatePassword } = useAuth();
   const [tab, setTab] = useState('orders'); // 'orders' | 'profile'
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
   
   // Auth Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [authErr, setAuthErr] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'reset') {
+        setAuthMode('reset');
+      }
+    }
+  }, []);
 
   // Orders State
   const [orders, setOrders] = useState([]);
@@ -52,11 +63,57 @@ export default function AccountPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setAuthErr('');
+    setAuthSuccess('');
     setAuthLoading(true);
     try {
       await signUp(email, password, fullName, phone);
     } catch (err) {
       setAuthErr(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthErr('');
+    setAuthSuccess('');
+    setAuthLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setAuthErr(err.message || 'Google sign-in failed. Please verify provider settings.');
+      setAuthLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setAuthErr('');
+    setAuthSuccess('');
+    setAuthLoading(true);
+    try {
+      await resetPassword(email);
+      setAuthSuccess('Password recovery email sent! Check your inbox for the reset link.');
+    } catch (err) {
+      setAuthErr(err.message || 'Could not send reset email. Please verify your email address.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setAuthErr('');
+    setAuthSuccess('');
+    setAuthLoading(true);
+    try {
+      await updatePassword(newPassword);
+      setAuthSuccess('Password updated successfully! Redirecting you to sign in...');
+      setTimeout(() => {
+        setAuthMode('login');
+      }, 2000);
+    } catch (err) {
+      setAuthErr(err.message || 'Failed to update password.');
     } finally {
       setAuthLoading(false);
     }
@@ -90,32 +147,98 @@ export default function AccountPage() {
         </section>
 
         <section className="auth-form-side">
-          <div className="auth-form-top"><span>{authMode === 'login' ? 'WELCOME BACK' : 'JOIN THE COMMUNITY'}</span><Link href="/shop">Continue shopping <b>↗</b></Link></div>
+          <div className="auth-form-top"><span>{authMode === 'login' ? 'WELCOME BACK' : authMode === 'register' ? 'JOIN THE COMMUNITY' : 'PASSWORD RECOVERY'}</span><Link href="/shop">Continue shopping <b>↗</b></Link></div>
           <div className="auth-form-wrap">
-            <div className="auth-tabs" role="tablist" aria-label="Account access">
-              <button type="button" role="tab" aria-selected={authMode === 'login'} className={`auth-tab-btn ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthErr(''); }}>Sign in</button>
-              <button type="button" role="tab" aria-selected={authMode === 'register'} className={`auth-tab-btn ${authMode === 'register' ? 'active' : ''}`} onClick={() => { setAuthMode('register'); setAuthErr(''); }}>Create account</button>
-            </div>
+            {authMode !== 'forgot' && authMode !== 'reset' && (
+              <div className="auth-tabs" role="tablist" aria-label="Account access">
+                <button type="button" role="tab" aria-selected={authMode === 'login'} className={`auth-tab-btn ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthErr(''); setAuthSuccess(''); }}>Sign in</button>
+                <button type="button" role="tab" aria-selected={authMode === 'register'} className={`auth-tab-btn ${authMode === 'register' ? 'active' : ''}`} onClick={() => { setAuthMode('register'); setAuthErr(''); setAuthSuccess(''); }}>Create account</button>
+              </div>
+            )}
 
-            <span className="auth-form-kicker">{authMode === 'login' ? 'YOUR ACCOUNT, RIGHT THIS WAY' : 'A LITTLE MORE ROOM TO EXPLORE'}</span>
-            <h2>{authMode === 'login' ? 'Good to see you again.' : 'Make yourself at home.'}</h2>
+            <span className="auth-form-kicker">
+              {authMode === 'login' && 'YOUR ACCOUNT, RIGHT THIS WAY'}
+              {authMode === 'register' && 'A LITTLE MORE ROOM TO EXPLORE'}
+              {authMode === 'forgot' && 'ACCOUNT RECOVERY'}
+              {authMode === 'reset' && 'SET NEW PASSWORD'}
+            </span>
+            <h2>
+              {authMode === 'login' && 'Good to see you again.'}
+              {authMode === 'register' && 'Make yourself at home.'}
+              {authMode === 'forgot' && 'Reset your password.'}
+              {authMode === 'reset' && 'Create a new password.'}
+            </h2>
             <p className="auth-form-intro">
-              {authMode === 'login'
-                ? 'Sign in to see your orders, delivery details, and saved account information.'
-                : 'Create an account to keep track of your orders and make checkout simpler.'}
+              {authMode === 'login' && 'Sign in to see your orders, delivery details, and saved account information.'}
+              {authMode === 'register' && 'Create an account to keep track of your orders and make checkout simpler.'}
+              {authMode === 'forgot' && 'Enter your email address and we will send you a secure password reset link.'}
+              {authMode === 'reset' && 'Please choose a strong password with at least 6 characters.'}
             </p>
 
             {authErr && <p className="auth-error" role="alert">{authErr}</p>}
+            {authSuccess && <p className="note" style={{ background: 'rgba(31,157,85,0.15)', border: '1px solid #1F9D55', color: '#1F9D55', padding: '12px', borderRadius: '8px', marginBottom: '16px' }} role="status">{authSuccess}</p>}
 
-            {authMode === 'login' ? (
+            {(authMode === 'login' || authMode === 'register') && (
+              <>
+                <button
+                  type="button"
+                  className="google-auth-btn"
+                  onClick={handleGoogleSignIn}
+                  disabled={authLoading}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #243B53',
+                    background: '#0D1B2A',
+                    color: '#EAF0F4',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                  Continue with Google
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', gap: '8px' }}>
+                  <div style={{ flex: 1, height: '1px', background: '#243B53' }} />
+                  <span style={{ fontSize: '11px', color: '#8899A6', textTransform: 'uppercase' }}>or with email</span>
+                  <div style={{ flex: 1, height: '1px', background: '#243B53' }} />
+                </div>
+              </>
+            )}
+
+            {authMode === 'login' && (
               <form onSubmit={handleLogin} className="auth-form">
                 <label className="lbl" htmlFor="account-email">Email address</label>
                 <input id="account-email" className="in" type="email" autoComplete="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <label className="lbl" htmlFor="account-password">Password</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="lbl" htmlFor="account-password" style={{ margin: 0 }}>Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('forgot'); setAuthErr(''); setAuthSuccess(''); }}
+                    style={{ background: 'none', border: 'none', color: '#FFC21A', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <input id="account-password" className="in" type="password" autoComplete="current-password" required placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <button className="auth-submit" type="submit" disabled={authLoading}>{authLoading ? 'Signing you in…' : 'Sign in'} <span>→</span></button>
               </form>
-            ) : (
+            )}
+
+            {authMode === 'register' && (
               <form onSubmit={handleRegister} className="auth-form">
                 <label className="lbl" htmlFor="account-name">Full name</label>
                 <input id="account-name" className="in" type="text" autoComplete="name" required placeholder="Your name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -126,6 +249,29 @@ export default function AccountPage() {
                 <label className="lbl" htmlFor="account-register-password">Create a password</label>
                 <input id="account-register-password" className="in" type="password" autoComplete="new-password" required minLength={6} placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <button className="auth-submit" type="submit" disabled={authLoading}>{authLoading ? 'Creating your account…' : 'Create account'} <span>→</span></button>
+              </form>
+            )}
+
+            {authMode === 'forgot' && (
+              <form onSubmit={handleForgotPassword} className="auth-form">
+                <label className="lbl" htmlFor="forgot-email">Account email address</label>
+                <input id="forgot-email" className="in" type="email" autoComplete="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <button className="auth-submit" type="submit" disabled={authLoading}>{authLoading ? 'Sending link…' : 'Send reset link'} <span>→</span></button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setAuthErr(''); setAuthSuccess(''); }}
+                  style={{ background: 'none', border: 'none', color: '#8899A6', fontSize: '13px', cursor: 'pointer', marginTop: '12px', textAlign: 'center' }}
+                >
+                  ← Back to Sign In
+                </button>
+              </form>
+            )}
+
+            {authMode === 'reset' && (
+              <form onSubmit={handleUpdatePassword} className="auth-form">
+                <label className="lbl" htmlFor="reset-new-password">New password</label>
+                <input id="reset-new-password" className="in" type="password" required minLength={6} placeholder="At least 6 characters" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <button className="auth-submit" type="submit" disabled={authLoading}>{authLoading ? 'Updating password…' : 'Save new password'} <span>→</span></button>
               </form>
             )}
 
