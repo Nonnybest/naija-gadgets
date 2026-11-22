@@ -6,6 +6,7 @@ const ART = [
   { test: /sdr|radio|ubertooth|flipper|cyber|sniffer/i, kind: 'radio', label: 'WIRELESS TOOLS' },
   { test: /vacuum|robot vacuum/i, kind: 'vacuum', label: 'HOME ROBOTICS' },
   { test: /matter|thread|gateway|hub|smart home/i, kind: 'hub', label: 'CONNECTED HOME' },
+  { test: /drone|aerial|gimbal|robotics/i, kind: 'drone', label: 'AERIAL TECH' },
   { test: /thermal|camera|surveillance|doorbell/i, kind: 'camera', label: 'SMART SECURITY' },
   { test: /wearable|headset|glasses|ring|tracker/i, kind: 'wearable', label: 'EVERYDAY TECH' },
   { test: /caliper|solder|probe|sensor|lab|workshop/i, kind: 'tool', label: 'PRECISION TOOLS' },
@@ -45,6 +46,18 @@ function Device({ kind }) {
       <path d="M292 320l-25 18m241-18 25 18" stroke="#18334B" strokeWidth="8" />
       <path d="M310 355l-18 22m196-22 18 22" stroke="#FFC21A" strokeWidth="7" />
       <rect x="477" y="213" width="72" height="104" rx="14" fill="#344E60" stroke="#7893A3" /><path d="M490 234h46m-46 14h46" stroke="#6CC6AE" />
+    </g>;
+    case 'drone': return <g {...common}>
+      <path d="M400 264l44-20 34 23-48 28z" fill="#20394b" stroke="#879ead" />
+      <path d="M400 264l-44-20-34 23 48 28z" fill="#20394b" stroke="#879ead" />
+      <path d="M430 283l18 46-25 32-22-58z" fill="#20394b" stroke="#879ead" />
+      <path d="M370 283l-18 46 25 32 22-58z" fill="#20394b" stroke="#879ead" />
+      <path d="M362 255l-70-24m108 22-48-49m86 49 48-49m-48 51 70-24m-109 80-48 40m86-40 48 40" stroke="#C9D8E8" strokeWidth="6" />
+      <ellipse cx="278" cy="228" rx="45" ry="8" fill="#18334B" stroke="#6CC6AE" /><ellipse cx="348" cy="198" rx="38" ry="7" fill="#18334B" stroke="#6CC6AE" />
+      <ellipse cx="452" cy="198" rx="38" ry="7" fill="#18334B" stroke="#6CC6AE" /><ellipse cx="522" cy="228" rx="45" ry="8" fill="#18334B" stroke="#6CC6AE" />
+      <rect x="377" y="260" width="46" height="44" rx="15" fill="#DCE8EF" stroke="#91A9B9" />
+      <circle cx="400" cy="280" r="11" fill="#101F2D" stroke="#FFC21A" strokeWidth="4" />
+      <path d="M388 304v31m24-31v31" stroke="#FFC21A" strokeWidth="4" />
     </g>;
     case 'hub': return <g {...common}>
       <rect x="296" y="206" width="208" height="142" rx="35" fill="#EAF0F4" stroke="#A5B7C1" strokeWidth="4" />

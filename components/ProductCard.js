@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { naira } from '@/lib/supabase';
 import { useCart } from '@/lib/cart';
 import ProductArtwork, { hasProductArtwork } from '@/components/ProductArtwork';
@@ -7,6 +7,16 @@ import ProductArtwork, { hasProductArtwork } from '@/components/ProductArtwork';
 export default function ProductCard({ p }) {
   const { add } = useCart() || {};
   const [added, setAdded] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
+
+  useEffect(() => {
+    if (!imageOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setImageOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [imageOpen]);
 
   if (!p) return null;
 
@@ -25,7 +35,10 @@ export default function ProductCard({ p }) {
 
   const isOutOfStock = !p.stock || p.stock < 1;
 
+  const hasArtwork = hasProductArtwork(p);
+
   return (
+    <>
     <article className="jumia-card">
       {/* Discount badge & Official Store pill */}
       <div className="card-top-badges">
@@ -35,27 +48,19 @@ export default function ProductCard({ p }) {
 
       {/* Product Image */}
       <div className="card-img-wrapper">
-        <ProductArtwork product={p} />
-        {!hasProductArtwork(p) && p.image_url ? (
-          <img
-            src={p.image_url}
-            alt={p.name || '2026 Smart Gadget'}
-            loading="lazy"
-            className="product-img"
-            onError={(e) => {
-              // Fallback to placeholder if external URL fails
-              e.currentTarget.style.display = 'none';
-              if (e.currentTarget.nextSibling) {
-                e.currentTarget.nextSibling.style.display = 'grid';
-              }
-            }}
-          />
-        ) : null}
-        {!p.image_url && !hasProductArtwork(p) && (
-          <div className="ph" style={{ display: 'grid' }}>
-            <span>📶 {p.category || 'Smart Tech'}</span>
-          </div>
-        )}
+        <button
+          className="product-image-trigger"
+          type="button"
+          onClick={() => setImageOpen(true)}
+          aria-label={`View image of ${p.name} larger`}
+        >
+          {hasArtwork ? <ProductArtwork product={p} /> : p.image_url ? (
+            <img src={p.image_url} alt={p.name || 'Smart gadget'} loading="lazy" decoding="async" className="product-img" />
+          ) : (
+            <div className="ph"><span>📶 {p.category || 'Smart Tech'}</span></div>
+          )}
+          <span className="image-zoom-hint"><span>⌕</span> View image</span>
+        </button>
       </div>
 
       {/* Card Info */}
@@ -113,5 +118,19 @@ export default function ProductCard({ p }) {
         </button>
       </div>
     </article>
+    {imageOpen && (
+      <div className="image-viewer-backdrop" onClick={() => setImageOpen(false)}>
+        <div className="image-viewer" role="dialog" aria-modal="true" aria-label={`Product image: ${p.name}`} onClick={(event) => event.stopPropagation()}>
+          <button className="image-viewer-close" type="button" onClick={() => setImageOpen(false)} aria-label="Close image viewer">×</button>
+          <div className="image-viewer-photo">
+            {hasArtwork ? <ProductArtwork product={p} /> : p.image_url ? (
+              <img src={p.image_url} alt={p.name || 'Smart gadget'} loading="eager" decoding="async" />
+            ) : <div className="ph"><span>📶 {p.category || 'Smart Tech'}</span></div>}
+          </div>
+          <div className="image-viewer-caption"><span>PRODUCT IMAGE</span><h2>{p.name}</h2><p>Click outside the image or press Esc to close.</p></div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

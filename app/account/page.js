@@ -64,116 +64,75 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <main className="wrap" style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <p className="muted">Loading your account...</p>
+      <main className="account-loading">
+        <span className="account-loading-mark" />
+        <p>Opening your account…</p>
       </main>
     );
   }
 
-  // Not logged in: Show Jumia-style Auth Card
+  // Sign in and registration live in the same calm, spacious account entry point.
   if (!user) {
     return (
-      <main className="wrap" style={{ maxWidth: 480, margin: '40px auto' }}>
-        <div className="card auth-box">
-          <div className="auth-tabs">
-            <button
-              className={`auth-tab-btn ${authMode === 'login' ? 'active' : ''}`}
-              onClick={() => { setAuthMode('login'); setAuthErr(''); }}
-            >
-              Sign In
-            </button>
-            <button
-              className={`auth-tab-btn ${authMode === 'register' ? 'active' : ''}`}
-              onClick={() => { setAuthMode('register'); setAuthErr(''); }}
-            >
-              Create Account
-            </button>
+      <main className="account-auth-page">
+        <section className="auth-story">
+          <div className="auth-story-photo"><img src="/products/dji-smart-drone.jpg" alt="Camera drone ready for its next flight" /></div>
+          <div className="auth-story-shade" />
+          <div className="auth-story-content">
+            <Link href="/" className="auth-story-brand">NAIJA GADGETS <span> / MEMBERS</span></Link>
+            <div className="auth-story-message">
+              <span className="section-kicker">A BETTER WAY TO KEEP IT ALL TOGETHER</span>
+              <h1>Your next good<br />idea starts here<span>.</span></h1>
+              <p>Keep your orders close, save time at checkout, and get back to discovering what’s next.</p>
+            </div>
+            <div className="auth-story-foot"><span>01 / MEMBER ACCESS</span><span>TECH FOR WHAT’S NEXT</span></div>
           </div>
+        </section>
 
-          <h2 style={{ fontSize: '1.4rem', margin: '16px 0 6px' }}>
-            {authMode === 'login' ? 'Welcome back to Naija Gadgets' : 'Join the Tech Marketplace'}
-          </h2>
-          <p className="muted" style={{ marginBottom: 16 }}>
-            {authMode === 'login'
-              ? 'Sign in to access your order history and saved delivery addresses.'
-              : 'Create an account to track shipments, get exclusive 2026 tech deals and fast checkout.'}
-          </p>
+        <section className="auth-form-side">
+          <div className="auth-form-top"><span>{authMode === 'login' ? 'WELCOME BACK' : 'JOIN THE COMMUNITY'}</span><Link href="/shop">Continue shopping <b>↗</b></Link></div>
+          <div className="auth-form-wrap">
+            <div className="auth-tabs" role="tablist" aria-label="Account access">
+              <button type="button" role="tab" aria-selected={authMode === 'login'} className={`auth-tab-btn ${authMode === 'login' ? 'active' : ''}`} onClick={() => { setAuthMode('login'); setAuthErr(''); }}>Sign in</button>
+              <button type="button" role="tab" aria-selected={authMode === 'register'} className={`auth-tab-btn ${authMode === 'register' ? 'active' : ''}`} onClick={() => { setAuthMode('register'); setAuthErr(''); }}>Create account</button>
+            </div>
 
-          {authErr && <p className="note" style={{ background: '#FF4D4F', color: '#fff' }}>{authErr}</p>}
+            <span className="auth-form-kicker">{authMode === 'login' ? 'YOUR ACCOUNT, RIGHT THIS WAY' : 'A LITTLE MORE ROOM TO EXPLORE'}</span>
+            <h2>{authMode === 'login' ? 'Good to see you again.' : 'Make yourself at home.'}</h2>
+            <p className="auth-form-intro">
+              {authMode === 'login'
+                ? 'Sign in to see your orders, delivery details, and saved account information.'
+                : 'Create an account to keep track of your orders and make checkout simpler.'}
+            </p>
 
-          {authMode === 'login' ? (
-            <form onSubmit={handleLogin}>
-              <label className="lbl">Email address</label>
-              <input
-                className="in"
-                type="email"
-                required
-                placeholder="e.g. john@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <label className="lbl">Password</label>
-              <input
-                className="in"
-                type="password"
-                required
-                placeholder="Your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button className="btn big" type="submit" disabled={authLoading} style={{ marginTop: 12 }}>
-                {authLoading ? 'Signing In...' : 'Sign In'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister}>
-              <label className="lbl">Full Name</label>
-              <input
-                className="in"
-                type="text"
-                required
-                placeholder="e.g. Chinonso Ajali"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-              <label className="lbl">Phone Number</label>
-              <input
-                className="in"
-                type="tel"
-                placeholder="e.g. 08012345678"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-              <label className="lbl">Email address</label>
-              <input
-                className="in"
-                type="email"
-                required
-                placeholder="e.g. john@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <label className="lbl">Create Password</label>
-              <input
-                className="in"
-                type="password"
-                required
-                placeholder="Min 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button className="btn big" type="submit" disabled={authLoading} style={{ marginTop: 12 }}>
-                {authLoading ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
-          )}
+            {authErr && <p className="auth-error" role="alert">{authErr}</p>}
 
-          <div style={{ marginTop: 20, textAlign: 'center' }}>
-            <Link href="/shop" className="muted" style={{ textDecoration: 'underline' }}>
-              ← Return to marketplace
-            </Link>
+            {authMode === 'login' ? (
+              <form onSubmit={handleLogin} className="auth-form">
+                <label className="lbl" htmlFor="account-email">Email address</label>
+                <input id="account-email" className="in" type="email" autoComplete="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <label className="lbl" htmlFor="account-password">Password</label>
+                <input id="account-password" className="in" type="password" autoComplete="current-password" required placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button className="auth-submit" type="submit" disabled={authLoading}>{authLoading ? 'Signing you in…' : 'Sign in'} <span>→</span></button>
+              </form>
+            ) : (
+              <form onSubmit={handleRegister} className="auth-form">
+                <label className="lbl" htmlFor="account-name">Full name</label>
+                <input id="account-name" className="in" type="text" autoComplete="name" required placeholder="Your name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <label className="lbl" htmlFor="account-phone">Phone number <span>(optional)</span></label>
+                <input id="account-phone" className="in" type="tel" autoComplete="tel" placeholder="080 1234 5678" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <label className="lbl" htmlFor="account-register-email">Email address</label>
+                <input id="account-register-email" className="in" type="email" autoComplete="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <label className="lbl" htmlFor="account-register-password">Create a password</label>
+                <input id="account-register-password" className="in" type="password" autoComplete="new-password" required minLength={6} placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button className="auth-submit" type="submit" disabled={authLoading}>{authLoading ? 'Creating your account…' : 'Create account'} <span>→</span></button>
+              </form>
+            )}
+
+            <div className="auth-form-foot"><span>Secure sign-in</span><span>•</span><span>Your account stays yours</span></div>
           </div>
-        </div>
+          <div className="auth-form-bottom"><Link href="/">← Back to Naija Gadgets</Link><span>Need help? <a href="https://wa.me/2348000000000" target="_blank" rel="noreferrer">Talk to us ↗</a></span></div>
+        </section>
       </main>
     );
   }

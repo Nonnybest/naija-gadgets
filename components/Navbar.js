@@ -1,18 +1,43 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/lib/cart';
+
+const MENU_CATEGORIES = [
+  ['Raspberry Pi & Single Board Computers', 'Boards & edge AI'],
+  ['Smart Locks & Biometric Access', 'Smart locks'],
+  ['Smart Home & Matter Hubs', 'Smart home'],
+  ['Drones, Gimbal & Robotics', 'Drones & robotics'],
+  ['Hacking, SDR & Radio Tools', 'Security tools'],
+  ['Wearables, AR & Smart Rings', 'Wearables'],
+  ['Smart Security & Surveillance', 'Cameras & security'],
+  ['Sensors, Lab & Workshop Gadgets', 'Sensors & workshop'],
+];
 
 export default function Navbar() {
   const router = useRouter();
   const { user } = useAuth();
   const { items } = useCart();
   const [query, setQuery] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const cartCount = (items || []).reduce((sum, item) => sum + (item.qty || 1), 0);
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0];
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    document.body.classList.add('menu-is-open');
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.classList.remove('menu-is-open');
+    };
+  }, [menuOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -36,6 +61,17 @@ export default function Navbar() {
       {/* 2. Main Marketplace Navigation Header */}
       <header className="marketplace-header">
         <div className="header-inner">
+          <button
+            type="button"
+            className={`menu-toggle ${menuOpen ? 'is-open' : ''}`}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="site-menu-drawer"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span /><span /><span />
+          </button>
+
           {/* Logo */}
           <Link href="/" className="market-logo">
             <span className="logo-main">Naija Gadgets</span>
@@ -100,6 +136,37 @@ export default function Navbar() {
           <Link href="/account">Orders & account</Link>
         </div>
       </nav>
+
+      {menuOpen && (
+        <div className="drawer-layer">
+          <button className="drawer-scrim" type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
+          <aside id="site-menu-drawer" className="site-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+            <div className="drawer-heading">
+              <div><span className="drawer-kicker">NAIJA GADGETS</span><h2 id="drawer-title">Explore</h2></div>
+              <button className="drawer-close" type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)}>×</button>
+            </div>
+
+            <Link href="/shop" className="drawer-all-link" onClick={() => setMenuOpen(false)}>Shop all gadgets <span>↗</span></Link>
+            <div className="drawer-section-label">SHOP BY CATEGORY</div>
+            <nav className="drawer-categories" aria-label="Shop categories">
+              {MENU_CATEGORIES.map(([category, label], index) => (
+                <Link key={category} href={`/shop?cat=${encodeURIComponent(category)}`} onClick={() => setMenuOpen(false)}>
+                  <span className="drawer-category-index">0{index + 1}</span><span>{label}</span><span className="drawer-chevron">↗</span>
+                </Link>
+              ))}
+            </nav>
+
+            <div className="drawer-bottom-links">
+              <Link href="/account" onClick={() => setMenuOpen(false)}>
+                <span className="drawer-account-icon">◉</span><span><strong>{user ? `Welcome, ${userName}` : 'Sign in or create an account'}</strong><small>{user ? 'View orders and profile' : 'Manage orders and checkout faster'}</small></span><span>→</span>
+              </Link>
+              <Link href="/cart" onClick={() => setMenuOpen(false)}>
+                <span className="drawer-account-icon">▱</span><span><strong>Your cart</strong><small>{cartCount} {cartCount === 1 ? 'item' : 'items'}</small></span><span>→</span>
+              </Link>
+            </div>
+          </aside>
+        </div>
+      )}
     </>
   );
 }

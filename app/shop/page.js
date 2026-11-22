@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { supabase } from '@/lib/supabase';
 
@@ -24,6 +24,7 @@ export default function Shop() {
   const [sortBy, setSortBy] = useState('featured');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [loading, setLoading] = useState(true);
+  const loadMoreRef = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -77,6 +78,20 @@ export default function Shop() {
     () => filteredProducts.slice(0, visibleCount),
     [filteredProducts, visibleCount]
   );
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel || loading || visibleCount >= filteredProducts.length) return undefined;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisibleCount((current) => Math.min(current + ITEMS_PER_PAGE, filteredProducts.length));
+      }
+    }, { rootMargin: '500px 0px' });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filteredProducts.length, loading, visibleCount]);
 
   return (
     <main className="shop-wrap">
@@ -201,12 +216,12 @@ export default function Shop() {
 
             {/* Load More Button */}
             {visibleCount < filteredProducts.length && (
-              <div className="load-more-container">
+              <div className="load-more-container" ref={loadMoreRef}>
                 <button
                   className="btn btn-load-more"
                   onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
                 >
-                  ⚡ Load Next {Math.min(ITEMS_PER_PAGE, filteredProducts.length - visibleCount)} Products ({filteredProducts.length - visibleCount} remaining)
+                  Load {Math.min(ITEMS_PER_PAGE, filteredProducts.length - visibleCount)} more products ({filteredProducts.length - visibleCount} left)
                 </button>
               </div>
             )}
