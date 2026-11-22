@@ -5,14 +5,14 @@ import { supabase } from '@/lib/supabase';
 
 const CATEGORIES = [
   'All',
-  'Single-Board Computers & Edge AI',
-  'Smart Locks & Biometric Security',
-  'IoT Hubs & Wireless Mesh',
-  'Autonomous Drones & Aerial Robotics',
-  'Hardware Security & Cyber Tools',
-  'Wearable Tech & Smart Rings',
-  'Smart Surveillance & Solar Security',
-  'Robotics & Sensors',
+  'Raspberry Pi & Single Board Computers',
+  'Smart Locks & Biometric Access',
+  'Smart Home & Matter Hubs',
+  'Drones, Gimbal & Robotics',
+  'Hacking, SDR & Radio Tools',
+  'Wearables, AR & Smart Rings',
+  'Smart Security & Surveillance',
+  'Sensors, Lab & Workshop Gadgets',
 ];
 
 const ITEMS_PER_PAGE = 36;
@@ -26,6 +26,12 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const category = params.get('cat');
+    const query = params.get('q');
+    if (category && CATEGORIES.includes(category)) setSelectedCat(category);
+    if (query) setSearchQuery(query);
+
     supabase
       .from('ng_products')
       .select('*')
@@ -77,16 +83,15 @@ export default function Shop() {
       {/* Shop Header Banner */}
       <section className="shop-hero-banner">
         <div className="wrap">
-          <div className="badge-tag">2026 SMART TECH MARKETPLACE</div>
-          <h1>Explore 500+ Connected Smart Gadgets</h1>
-          <p className="muted" style={{ color: '#B9C6D3', maxWidth: 640 }}>
-            Strictly advanced 2026 hardware with Bluetooth LE, Wi-Fi 7, Matter, Sub-GHz, edge AI,
-            and solar automation. Delivered nationwide across Nigeria.
+          <div className="badge-tag">THE NAIJA GADGETS COLLECTION</div>
+          <h1>Good ideas start with good tools.</h1>
+          <p className="muted shop-hero-copy">
+            Explore considered tech for your home, your workbench, and wherever curiosity takes you.
           </p>
         </div>
       </section>
 
-      <div className="wrap" style={{ marginTop: 24 }}>
+      <div className="wrap shop-content">
         {/* Controls Bar: Search & Sort */}
         <div className="shop-controls-bar">
           <div className="shop-search-box">
@@ -94,7 +99,7 @@ export default function Shop() {
             <input
               type="text"
               className="shop-search-input"
-              placeholder="Search Raspberry Pi 5, Smart Lock, Flipper, Drones, IoT Hub..."
+              placeholder="Search gadgets, tools, and more"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);

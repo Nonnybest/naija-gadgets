@@ -10,7 +10,6 @@ export default function Navbar() {
   const { user } = useAuth();
   const { items } = useCart();
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('');
 
   const cartCount = (items || []).reduce((sum, item) => sum + (item.qty || 1), 0);
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0];
@@ -26,17 +25,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* 1. Top Jumia-Style Announcement Strip */}
+      {/* A small service note keeps the header calm and useful. */}
       <div className="top-announcement-bar">
         <div className="announcement-content">
-          <span>🚀 <strong>2026 Smart Tech Hub</strong>: Single-Board Computers, Biometrics, Drones & IoT</span>
-          <div className="announcement-links">
-            <span>🚚 Nationwide Delivery Across 36 States</span>
-            <span>📞 WhatsApp Support: +234 800 GADGETS</span>
-            <Link href="/admin/agents" className="top-ai-link">
-              🤖 AI Staff
-            </Link>
-          </div>
+          <span>Thoughtful tech, delivered across Nigeria</span>
+          <span>Need a hand? <a href="https://wa.me/2348000000000" target="_blank" rel="noreferrer">Chat with us ↗</a></span>
         </div>
       </div>
 
@@ -46,7 +39,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="market-logo">
             <span className="logo-main">Naija Gadgets</span>
-            <span className="logo-sub">2026 SMART MARKETPLACE</span>
+            <span className="logo-sub">TECH FOR WHAT’S NEXT</span>
           </Link>
 
           {/* Search Bar */}
@@ -55,14 +48,14 @@ export default function Navbar() {
               <span className="search-icon">🔍</span>
               <input
                 type="text"
-                placeholder="Search 500+ Smart Locks, Raspberry Pi 5, Flipper, Drones..."
+                placeholder="What are you looking for?"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="header-search-input"
               />
             </div>
             <button type="submit" className="header-search-btn">
-              SEARCH
+              <span>Search</span><span aria-hidden="true">↗</span>
             </button>
           </form>
 
@@ -70,26 +63,23 @@ export default function Navbar() {
           <div className="header-actions">
             {/* Account Link */}
             <Link href="/account" className="header-action-btn">
-              <span className="action-icon">👤</span>
+              <svg className="action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M4.5 20c.7-3.7 3.4-5.6 7.5-5.6s6.8 1.9 7.5 5.6" />
+              </svg>
               <div className="action-text">
                 <span className="action-label">{user ? 'Welcome,' : 'Sign In /'}</span>
                 <span className="action-val">{user ? userName : 'Account'}</span>
               </div>
             </Link>
 
-            {/* Shop Link */}
-            <Link href="/shop" className="header-action-btn hide-mobile">
-              <span className="action-icon">⚡</span>
-              <div className="action-text">
-                <span className="action-label">All Items</span>
-                <span className="action-val">500+ Gadgets</span>
-              </div>
-            </Link>
-
             {/* Cart Link with Badge */}
             <Link href="/cart" className="header-action-btn cart-btn">
               <div className="cart-icon-wrapper">
-                <span className="action-icon">🛒</span>
+                <svg className="action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M3 4h2l2.3 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H6" />
+                  <circle cx="10" cy="20" r="1" /><circle cx="17" cy="20" r="1" />
+                </svg>
                 {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
               </div>
               <div className="action-text hide-mobile">
@@ -101,33 +91,13 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* 3. Sub-Header Category Navigation */}
+      {/* Simple primary navigation */}
       <nav className="marketplace-subnav">
         <div className="subnav-inner">
-          <Link href="/shop" className="subnav-pill hot-deal">
-            🔥 Flash Sales
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            🧠 Raspberry Pi 5 & AI
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            🔒 Smart Locks
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            🌐 IoT Mesh Hubs
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            🛸 Autonomous Drones
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            ⚡ Flipper & SDR
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            💍 Smart Health Rings
-          </Link>
-          <Link href="/shop" className="subnav-pill">
-            ☀️ Solar PTZ Security
-          </Link>
+          <Link href="/">Home</Link>
+          <Link href="/shop">Shop all</Link>
+          <a href="/#featured">Staff picks</a>
+          <Link href="/account">Orders & account</Link>
         </div>
       </nav>
     </>

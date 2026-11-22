@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { naira } from '@/lib/supabase';
 import { useCart } from '@/lib/cart';
+import ProductArtwork, { hasProductArtwork } from '@/components/ProductArtwork';
 
 export default function ProductCard({ p }) {
   const { add } = useCart() || {};
@@ -34,7 +35,8 @@ export default function ProductCard({ p }) {
 
       {/* Product Image */}
       <div className="card-img-wrapper">
-        {p.image_url ? (
+        <ProductArtwork product={p} />
+        {!hasProductArtwork(p) && p.image_url ? (
           <img
             src={p.image_url}
             alt={p.name || '2026 Smart Gadget'}
@@ -49,9 +51,11 @@ export default function ProductCard({ p }) {
             }}
           />
         ) : null}
-        <div className="ph" style={{ display: p.image_url ? 'none' : 'grid' }}>
-          <span>📶 {p.category || 'Smart Tech'}</span>
-        </div>
+        {!p.image_url && !hasProductArtwork(p) && (
+          <div className="ph" style={{ display: 'grid' }}>
+            <span>📶 {p.category || 'Smart Tech'}</span>
+          </div>
+        )}
       </div>
 
       {/* Card Info */}
