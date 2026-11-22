@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 
 const ZONES = { 'Lagos': 2500, 'South-West and Abuja': 3500, 'Rest of Nigeria': 4500, 'Pickup point': 0 };
 
+const clean = (val) => (val ? String(val).replace(/^\uFEFF/, '').trim() : '');
+
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => null);
@@ -12,9 +14,9 @@ export async function POST(req) {
 
     const { reference, customer, items } = body;
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const paystackKey = process.env.PAYSTACK_SECRET_KEY;
+    const supabaseUrl = clean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    const serviceKey = clean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const paystackKey = clean(process.env.PAYSTACK_SECRET_KEY);
 
     if (!supabaseUrl || !serviceKey) {
       return NextResponse.json({ error: 'Database service is not configured.' }, { status: 500 });
