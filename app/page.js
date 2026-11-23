@@ -77,7 +77,7 @@ export default async function Home() {
               <h2>Picked for your next big idea.</h2>
               <p>A few favorites from our world of connected tech.</p>
             </div>
-            <Link href="/shop" className="quiet-link">See all 500+ gadgets <span>↗</span></Link>
+            <Link href="/shop" className="quiet-link">See all gadgets <span>↗</span></Link>
           </div>
 
           {featuredProducts.length > 0 ? (
@@ -86,7 +86,7 @@ export default async function Home() {
             </div>
           ) : (
             <div className="catalog-invite">
-              <span>500+</span><div><h3>There’s more to discover.</h3><p>Browse the full collection of smart gadgets and maker essentials.</p></div>
+              <span>New</span><div><h3>There’s more to discover.</h3><p>Browse the full collection of smart gadgets and maker essentials.</p></div>
               <Link href="/shop" className="cinema-button">Browse the shop <span>↗</span></Link>
             </div>
           )}

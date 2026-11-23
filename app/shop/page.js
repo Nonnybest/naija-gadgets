@@ -199,7 +199,7 @@ export default function Shop() {
             <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
             <h3>No gadgets match your filters</h3>
             <p className="muted">
-              Try a different keyword or reset category to "All" to browse all 500 gadgets.
+              Try a different keyword or reset category to "All" to browse all gadgets.
             </p>
             <button
               className="btn"

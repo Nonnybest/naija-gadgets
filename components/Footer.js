@@ -36,7 +36,7 @@ export default function Footer() {
             <ul className="footer-links">
               <li><Link href="/account">My Account & Orders</Link></li>
               <li><Link href="/cart">Shopping Cart</Link></li>
-              <li><Link href="/shop">Browse All 500 Gadgets</Link></li>
+              <li><Link href="/shop">Browse All Gadgets</Link></li>
               <li><Link href="/account">Order Tracking & Returns</Link></li>
               <li><a href="https://wa.me/2348000000000" target="_blank" rel="noreferrer">WhatsApp Customer Care</a></li>
             </ul>
@@ -59,7 +59,7 @@ export default function Footer() {
         <div className="footer-bottom-bar">
           <p>© {new Date().getFullYear()} Naija Gadgets Marketplace Ltd. All rights reserved.</p>
           <p className="footer-compliance">
-            Transactions secured by <strong>Paystack</strong>. Consumer rights compliant under FCCPC & NDPA 2023.
+            Transactions secured by <strong>Flutterwave</strong>. Consumer rights compliant under FCCPC & NDPA 2023.
           </p>
         </div>
       </div>

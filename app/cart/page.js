@@ -28,68 +28,74 @@ export default function Cart() {
   const total = subtotal + ship;
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
-  function pay() {
+  async function pay() {
     if (!f.name || !f.email || !f.phone || (f.zone !== 'Pickup point' && !f.address)) {
       return setMsg('Please fill in your name, email, phone and delivery address.');
     }
-    if (!f.email.includes('@')) {
-      return setMsg('Please enter a valid email address.');
+    if (!f.email.includes('@')) return setMsg('Please enter a valid email address.');
+    if (typeof window === 'undefined' || !window.FlutterwaveCheckout) {
+      return setMsg('Payment is still loading. Check your internet connection and try again.');
     }
-    if (typeof window === 'undefined' || !window.PaystackPop) {
-      return setMsg('Payment gateway is loading. Please check your internet connection and try again.');
-    }
+    const pk = process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY;
+    if (!pk) return setMsg('Payment is not set up yet (missing Flutterwave public key).');
 
-    const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
-    if (!paystackKey) {
-      return setMsg('Paystack public key is not configured in environment variables.');
-    }
-
-    const ref = 'NG' + Date.now();
     setLoading(true);
+    setMsg('');
+    let d;
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer: { ...f, user_id: user?.id || null }, items: items.map(({ id, qty }) => ({ id, qty })) }),
+      });
+      d = await res.json();
+    } catch {
+      setLoading(false);
+      return setMsg('Network error. Please try again.');
+    }
+    if (!d.ok) { setLoading(false); return setMsg(d.error || 'Could not start your order.'); }
 
-    const handler = window.PaystackPop.setup({
-      key: paystackKey,
-      email: f.email,
-      amount: total * 100,
+    let paid = false;
+    window.FlutterwaveCheckout({
+      public_key: pk,
+      tx_ref: d.reference,
+      amount: d.total,
       currency: 'NGN',
-      ref,
+      payment_options: 'card,banktransfer,ussd',
+      customer: { email: f.email, phone_number: f.phone, name: f.name },
+      customizations: { title: 'Naija Gadgets', description: 'Order ' + d.reference },
       callback: (r) => {
-        fetch('/api/orders', {
+        if (r && r.status === 'cancelled') return;
+        paid = true;
+        fetch('/api/orders/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            reference: r.reference,
-            customer: { ...f, user_id: user?.id || null },
-            items: items.map(({ id, qty }) => ({ id, qty })),
-          }),
+          body: JSON.stringify({ reference: d.reference }),
         })
           .then((x) => x.json())
-          .then((d) => {
+          .then((v) => {
             setLoading(false);
-            if (d.ok) {
+            if (v.ok) {
               clear();
-              setMsg(`🎉 Payment received! Order ${d.id.slice(0, 8).toUpperCase()} is confirmed. Check your account for real-time tracking.`);
+              setMsg('Payment received! Order ' + v.id.slice(0, 8).toUpperCase() + ' is confirmed. You can follow it in your account.');
             } else {
-              setMsg(d.error || 'Payment not confirmed. Contact us with ref ' + r.reference);
+              setMsg('We could not confirm the payment yet. Do not pay again. Contact us with reference ' + d.reference);
             }
           })
           .catch(() => {
             setLoading(false);
-            setMsg('Network error verifying order. Please contact us with reference: ' + r.reference);
+            setMsg('Network error while confirming. Do not pay again. Contact us with reference ' + d.reference);
           });
       },
-      onClose: () => {
-        setLoading(false);
-        setMsg('Payment checkout was canceled.');
+      onclose: () => {
+        if (!paid) { setLoading(false); setMsg('Payment was cancelled. Your cart is still here.'); }
       },
     });
-
-    handler.openIframe();
   }
 
   return (
     <main className="wrap" style={{ maxWidth: 1000, margin: '32px auto', padding: '0 16px' }}>
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
+      <Script src="https://checkout.flutterwave.com/v3.js" strategy="lazyOnload" />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h1 style={{ fontSize: '1.8rem', margin: 0, fontWeight: 800 }}>🛒 Shopping Cart ({items.reduce((s, i) => s + i.qty, 0)} items)</h1>
@@ -99,7 +105,7 @@ export default function Cart() {
       </div>
 
       {msg && (
-        <div className="note" style={{ marginBottom: 20, background: msg.includes('Payment received') ? '#1F9D55' : '#FFC21A', color: msg.includes('Payment received') ? '#fff' : '#0D1B2A' }}>
+        <div className="note" style={{ marginBottom: 20, background: msg.startsWith('Payment received') ? '#1F9D55' : '#FFC21A', color: msg.startsWith('Payment received') ? '#fff' : '#0D1B2A' }}>
           {msg}
         </div>
       )}
@@ -109,10 +115,10 @@ export default function Cart() {
           <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
           <h2 style={{ fontSize: '1.4rem', margin: '0 0 8px 0' }}>Your cart is empty</h2>
           <p className="muted" style={{ maxWidth: 400, margin: '0 auto 20px auto' }}>
-            Explore our curated catalog of 500+ advanced 2026 smart gadgets with nationwide delivery across Nigeria.
+            Explore our curated range of smart gadgets with nationwide delivery across Nigeria.
           </p>
           <Link href="/shop" className="btn" style={{ padding: '12px 24px', fontSize: 15 }}>
-            ⚡ Browse 2026 Smart Tech Catalog
+            ⚡ Browse the shop
           </Link>
         </div>
       ) : (
@@ -242,11 +248,11 @@ export default function Cart() {
                 disabled={loading}
                 style={{ marginTop: 14, background: '#FFC21A', color: '#0D1B2A', fontWeight: 800, fontSize: '1.05rem', cursor: loading ? 'not-allowed' : 'pointer' }}
               >
-                {loading ? 'Opening Secure Paystack...' : `🔒 Pay ${naira(total)} with Paystack`}
+                {loading ? 'Opening secure checkout...' : `🔒 Pay ${naira(total)} securely`}
               </button>
 
               <div style={{ textAlign: 'center', fontSize: '0.75rem', color: '#5B6B7B', marginTop: 8 }}>
-                ✓ Debit/Credit Cards • Bank Transfer • USSD • 100% Secure Nigerian Gateway
+                ✓ Debit/Credit Cards • Bank Transfer • USSD • Secured by Flutterwave
               </div>
             </div>
           </div>

@@ -1,98 +1,43 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { adminDb, ZONES } from '@/lib/server';
 
-const ZONES = { 'Lagos': 2500, 'South-West and Abuja': 3500, 'Rest of Nigeria': 4500, 'Pickup point': 0 };
-
-const clean = (val) => (val ? String(val).replace(/^\uFEFF/, '').trim() : '');
-
+// Step 1 of checkout: validate the cart, price it on the server, save a PENDING order.
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => null);
-    if (!body || !body.reference || !body.customer || !Array.isArray(body.items) || body.items.length === 0) {
-      return NextResponse.json({ error: 'Invalid order request payload.' }, { status: 400 });
+    const customer = body?.customer;
+    const items = body?.items;
+    if (!customer || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Invalid order request.' }, { status: 400 });
     }
-
-    const { reference, customer, items } = body;
-
-    const supabaseUrl = clean(process.env.NEXT_PUBLIC_SUPABASE_URL);
-    const serviceKey = clean(process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const paystackKey = clean(process.env.PAYSTACK_SECRET_KEY);
-
-    if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({ error: 'Database service is not configured.' }, { status: 500 });
-    }
-
-    const db = createClient(supabaseUrl, serviceKey);
+    const db = adminDb();
     const ids = items.map((i) => i.id).filter(Boolean);
-
-    if (ids.length === 0) {
-      return NextResponse.json({ error: 'No valid products in cart.' }, { status: 400 });
-    }
-
-    const { data: prods, error: prodErr } = await db.from('ng_products').select('*').in('id', ids);
-    if (prodErr || !prods) {
-      return NextResponse.json({ error: 'Failed to retrieve product details.' }, { status: 500 });
-    }
+    const { data: prods, error } = await db.from('ng_products').select('id,name,price,stock').in('id', ids);
+    if (error || !prods) return NextResponse.json({ error: 'Could not load products.' }, { status: 500 });
 
     let subtotal = 0;
     const lines = [];
-
     for (const it of items) {
+      const qty = Math.floor(Number(it.qty));
       const p = prods.find((x) => x.id === it.id);
-      if (!p || p.stock < it.qty) {
-        return NextResponse.json({ error: `Item "${p?.name || it.id}" is out of stock or insufficient quantity.` }, { status: 400 });
+      if (!p || !(qty > 0) || p.stock < qty) {
+        return NextResponse.json({ error: `"${p?.name || 'An item'}" is out of stock or the quantity is too high.` }, { status: 400 });
       }
-      subtotal += p.price * it.qty;
-      lines.push({ id: p.id, name: p.name, price: p.price, qty: it.qty });
+      subtotal += p.price * qty;
+      lines.push({ id: p.id, name: p.name, price: p.price, qty });
     }
-
-    const shipping = ZONES[customer?.zone] ?? 4500;
+    const zone = ZONES[customer.zone] !== undefined ? customer.zone : 'Rest of Nigeria';
+    const shipping = ZONES[zone];
     const total = subtotal + shipping;
+    const reference = 'NG' + Date.now() + Math.random().toString(36).slice(2, 6).toUpperCase();
 
-    if (!paystackKey) {
-      return NextResponse.json({ error: 'Payment gateway is not configured.' }, { status: 500 });
-    }
-
-    const vRes = await fetch('https://api.paystack.co/transaction/verify/' + encodeURIComponent(reference), {
-      headers: { Authorization: 'Bearer ' + paystackKey },
-    });
-    const v = await vRes.json().catch(() => null);
-
-    if (!v || !v.status || !v.data || v.data.status !== 'success' || v.data.amount < total * 100) {
-      return NextResponse.json({ error: 'Payment could not be verified with Paystack.' }, { status: 400 });
-    }
-
-    const { data: o, error: orderErr } = await db
-      .from('ng_orders')
-      .insert({
-        reference,
-        user_id: customer.user_id || null,
-        name: customer.name || '',
-        email: customer.email || '',
-        phone: customer.phone || '',
-        address: customer.address || '',
-        zone: customer.zone || 'Lagos',
-        shipping,
-        total,
-        items: lines,
-        status: 'paid',
-      })
-      .select()
-      .single();
-
-    if (orderErr) {
-      return NextResponse.json({ error: 'Order already recorded or failed to save.' }, { status: 400 });
-    }
-
-    for (const l of lines) {
-      const p = prods.find((x) => x.id === l.id);
-      if (p) {
-        await db.from('ng_products').update({ stock: Math.max(0, p.stock - l.qty) }).eq('id', l.id);
-      }
-    }
-
-    return NextResponse.json({ ok: true, id: o.id });
-  } catch (err) {
-    return NextResponse.json({ error: err.message || 'An unexpected error occurred.' }, { status: 500 });
+    const { data: o, error: oErr } = await db.from('ng_orders').insert({
+      reference, user_id: customer.user_id || null, name: customer.name || '', email: customer.email || '',
+      phone: customer.phone || '', address: customer.address || '', zone, shipping, total, items: lines, status: 'pending',
+    }).select().single();
+    if (oErr) return NextResponse.json({ error: 'Could not save the order.' }, { status: 500 });
+    return NextResponse.json({ ok: true, id: o.id, reference, total });
+  } catch (e) {
+    return NextResponse.json({ error: e.message || 'Unexpected error.' }, { status: 500 });
   }
 }

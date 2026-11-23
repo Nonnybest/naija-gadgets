@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, naira } from '@/lib/supabase';
 
-const blank = { name: '', category: 'Phone accessories', price: 0, stock: 0, image_url: '', description: '', featured: false };
+const blank = { name: '', category: 'Phone accessories', price: 0, stock: 0, image_url: '', description: '', featured: false, images: [] };
 
 export default function Admin() {
   const [user, setUser] = useState(null);
@@ -54,6 +54,8 @@ export default function Admin() {
   const save = async () => {
     const { id, created_at, ...body } = form;
     if (!body.name || !body.category) return setErr('Name and category are required.');
+    body.images = (body.images || []).filter(Boolean);
+    body.image_url = body.images[0] || body.image_url || null;
     body.price = Math.max(0, Number(body.price) || 0);
     body.stock = Math.max(0, Number(body.stock) || 0);
 
@@ -82,6 +84,22 @@ export default function Admin() {
     else load();
   };
 
+  const upload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setErr('');
+    const urls = [];
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+      const { error } = await supabase.storage.from('ng-products').upload(path, file, { contentType: file.type });
+      if (error) { setErr('Upload failed: ' + error.message); break; }
+      urls.push(supabase.storage.from('ng-products').getPublicUrl(path).data.publicUrl);
+    }
+    if (urls.length) setForm((cur) => ({ ...cur, images: [...(cur.images || []), ...urls] }));
+    e.target.value = '';
+  };
+
   const f = (k, num) => (e) =>
     setForm({ ...form, [k]: e.target.type === 'checkbox' ? e.target.checked : num ? Math.max(0, +e.target.value) : e.target.value });
 
@@ -107,6 +125,7 @@ export default function Admin() {
           <a href="/admin/agents" className="btn" style={{ padding: '8px 16px', fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>
             🤖 AI Staff Desk
           </a>
+          <a href="/admin/customers" className="btn" style={{ padding: '8px 16px', fontSize: 14, textDecoration: 'none', display: 'inline-block' }}>Customers</a>
           <button className="chip" onClick={logout}>Sign out ({user.email})</button>
         </div>
       </div>
@@ -116,7 +135,8 @@ export default function Admin() {
         <input className="in" placeholder="Category" value={form.category} onChange={f('category')} />
         <input className="in" type="number" placeholder="Price (₦)" value={form.price} onChange={f('price', 1)} />
         <input className="in" type="number" placeholder="Stock" value={form.stock} onChange={f('stock', 1)} />
-        <input className="in" placeholder="Image URL" value={form.image_url || ''} onChange={f('image_url')} />
+        <textarea className="in" rows={4} placeholder="Photo links, one per line. The first photo is the main one." value={(form.images || []).join('\n')} onChange={(e) => setForm({ ...form, images: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) })} />
+        <label style={{ display: 'block', margin: '8px 0', fontSize: 14 }}>Or upload photos: <input type="file" accept="image/*" multiple onChange={upload} /></label>
         <input className="in" placeholder="Description" value={form.description || ''} onChange={f('description')} />
         <label style={{ display: 'block', margin: '8px 0' }}>
           <input type="checkbox" checked={!!form.featured} onChange={f('featured')} /> Show on home page

@@ -68,7 +68,7 @@ ${JSON.stringify(prods?.slice(0, 25), null, 2)}`;
 Company: Naija Gadgets (https://naija-gadgets.vercel.app)
 Niche: High-tech connected smart devices (Raspberry Pi 5, Matter/Thread smart locks, IoT, drones, cyber tools, SDRs).
 Logistics: Nationwide delivery across Nigeria. Zones: Lagos (₦2,500), South-West & Abuja (₦3,500), Rest of Nigeria (₦4,500), Lagos Pickups (Free).
-Payment: Paystack (Cards, Bank Transfer, USSD).
+Payment: Flutterwave (Cards, Bank Transfer, USSD).
 Compliance: Nigeria Data Protection Act 2023 (NDPA / NDPR), FCCPC Consumer Protection regulations.`;
 }
 
